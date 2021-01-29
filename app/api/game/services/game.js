@@ -16,6 +16,35 @@ async function getGameInfo(slug) {
   };
 }
 
+async function createManyToManyData(products) {
+  const developers = {};
+  const publishers = {};
+  const categories = {};
+  const platforms = {};
+
+  products.forEach((product) => {
+    const { developer, publisher, genres, supportedOperatingSystems } = product;
+
+    genres &&
+      genres.forEach((item) => {
+        categories[item] = true;
+      });
+    supportedOperatingSystems &&
+      supportedOperatingSystems.forEach((item) => {
+        platforms[item] = true;
+      });
+    developers[developer] = true;
+    publishers[publisher] = true;
+  });
+
+  return Promise.all([
+    ...Object.keys(developers).map((name) => create(name, "developer")),
+    ...Object.keys(publishers).map((name) => create(name, "publisher")),
+    ...Object.keys(categories).map((name) => create(name, "category")),
+    ...Object.keys(platforms).map((name) => create(name, "platform")),
+  ]);
+}
+
 async function getByName(name, entityName) {
   const item = await strapi.services[entityName].find({ name });
   return item.length ? item[0] : null;
@@ -38,8 +67,10 @@ module.exports = {
       data: { products },
     } = await axios.get(gogApiUrl);
 
-    await create(products[0].publisher, "publisher");
-    await create(products[0].developer, "developer");
+    // await create(products[0].publisher, "publisher");
+    // await create(products[0].developer, "developer");
+
+    await createManyToManyData([products[2], products[3]]);
 
     // console.log(await getGameInfo(products[0].slug));
   },
